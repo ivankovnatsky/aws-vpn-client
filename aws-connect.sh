@@ -2,13 +2,13 @@
 
 set -e
 
-# replace with your hostname
-VPN_HOST="cvpn-endpoint-<id>.prod.clientvpn.us-east-1.amazonaws.com"
+VPN_HOST="$1"
+PORT="$2"
+OVPN_CONF="$3"
+
 # path to the patched openvpn
-OVPN_BIN="./openvpn"
+OVPN_BIN="/run/current-system/sw/bin/openvpn"
 # path to the configuration file
-OVPN_CONF="vpn.conf"
-PORT=1194
 PROTO=udp
 
 wait_file() {
@@ -26,6 +26,9 @@ SRV=$(dig a +short "${RAND}.${VPN_HOST}"|head -n1)
 
 # cleanup
 rm -f saml-response.txt
+
+# start the saml response server and background it
+go run server.go >> /tmp/aws-connect-saml-server.log 2>&1 &
 
 echo "Getting SAML redirect URL from the AUTH_FAILED response (host: ${SRV}:${PORT})"
 OVPN_OUT=$($OVPN_BIN --config "${OVPN_CONF}" --verb 3 \
